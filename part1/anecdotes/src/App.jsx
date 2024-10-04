@@ -33,15 +33,16 @@ const App = () => {
     setVotes(copyVotes)
 
     // Check if there is a new anecdote with the most votes
-    console.log('Most votes at ', biggestIndex, ' with ', votes[biggestIndex], ' votes. Selected votes is at ', selected, ' with ', votes[selected], ' votes.')
     if (votes[biggestIndex] <= votes[selected]) {
       setBiggestIndex(selected)
-      console.log('Changed the most votes', biggestIndex)
     }
   }
 
   return (
     <div>
+      <h1>
+        Anecdote of the day
+      </h1>
       {anecdotes[selected]}<br></br>
 
       <p>Has {votes[selected]} votes.</p>
