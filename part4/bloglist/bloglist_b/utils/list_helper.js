@@ -44,7 +44,6 @@ const mostBlogs = (blogs) => {
     if (value > maxValue) {
       maxValue = value;
       maxKey = key;
-      console.log(value)
     }
   }
 
@@ -70,7 +69,6 @@ const mostLikes = (blogs) => {
     if (value > maxValue) {
       maxValue = value;
       maxKey = key;
-      console.log(value)
     }
   }
 
