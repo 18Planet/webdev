@@ -1,6 +1,6 @@
 const blogsRouter = require('express').Router()
 const Blog = require('../models/blog')
-const User = require('../models/user')
+const middleware = require('../utils/middleware')
 
 blogsRouter.get('/', async (request, response) => {
   const blogs = await Blog.find({})
@@ -8,11 +8,10 @@ blogsRouter.get('/', async (request, response) => {
   response.json(blogs)
 })
 
-blogsRouter.post('/', async (request, response, next) => {
+blogsRouter.post('/', middleware.userExtractor, async (request, response, next) => {
   const blog = new Blog(request.body)
 
-  const user = await User.findOne({})
-
+  const user = request.user
   blog.user = user.id
 
   const savedBlog = await blog.save()
@@ -22,8 +21,23 @@ blogsRouter.post('/', async (request, response, next) => {
   response.status(201).json(savedBlog)
 })
 
-blogsRouter.delete('/:id', async (request, response) => {
-  await Blog.findByIdAndDelete(request.params.id)
+blogsRouter.delete('/:id', middleware.userExtractor, async (request, response) => {
+  const user = request.user
+  const userId = user.id.toString()
+
+  // Find the user of the blog wanting to be deleted
+  const blog = await Blog.findById(request.params.id)
+  const blogUserId = blog.user.toString()
+
+  console.log(blog.user.toJSON())
+
+  console.log(userId, blogUserId)
+  if (userId === blogUserId) {
+    // Correct verification, delete blog
+    await Blog.findByIdAndDelete(request.params.id)
+  } else {
+    return response.status(403).json({ error: 'resource cannot be deleted, invalid permissions'})
+  }
   response.status(204).end()
 })
 

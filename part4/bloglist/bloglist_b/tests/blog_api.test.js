@@ -6,15 +6,37 @@ const app = require('../app')
 const helper = require('./test_helper')
 
 const Blog = require('../models/blog')
+const User = require('../models/user')
+
+const bcrypt = require('bcrypt')
 
 const api = supertest(app)
 describe('With initial set of blogs', () => {
+  let token = undefined
   beforeEach(async () => {
     await Blog.deleteMany({})
       for (let blog of helper.blogs) {
         let blogObject = new Blog(blog)
         await blogObject.save()
       }
+    
+    // do test user login
+    await User.deleteMany({})
+
+    const passwordHash = await bcrypt.hash('secret', 10)
+    const user = new User({ username: 'root', passwordHash })
+
+    await user.save()
+
+    // login
+    const api_response = await api
+      .post('/api/login')
+      .send({
+        username: 'root',
+        password: 'secret'
+      })
+    token = api_response.body.token
+    
   })
 
   describe('Check accessed blogs are correct', () => {
@@ -55,11 +77,13 @@ describe('With initial set of blogs', () => {
     
       await api
         .post('/api/blogs')
+        .set('Authorization', 'Bearer ' + token)
         .send(noTitleBlog)
         .expect(400)
     
       await api
         .post('/api/blogs')
+        .set('Authorization', 'Bearer ' + token)
         .send(noURLBlog)
         .expect(400)
     })
@@ -75,6 +99,7 @@ describe('With initial set of blogs', () => {
     
       await api
         .post('/api/blogs')
+        .set('Authorization', 'Bearer ' + token)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -98,6 +123,7 @@ describe('With initial set of blogs', () => {
   
       await api
         .delete(`/api/blogs/${id}`)
+        .set('Authorization', `Bearer ${token}`)
         .expect(204)
       
       const blogsAfter = await helper.blogsInDb()
@@ -119,6 +145,7 @@ describe('With initial set of blogs', () => {
 
       await api
         .put(`/api/blogs/${id}`)
+        .set('Authorization', `Bearer ${token}`)
         .send(changedBlog)
       
       const newResponse = await api.get('/api/blogs')
