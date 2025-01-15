@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import Blog from './components/Blog'
+
 import blogService from './services/blogs'
 import loginService from './services/login'
+
 import Notification from './components/Notification'
+import BlogForm from './components/BlogForm'
+import Blog from './components/Blog'
+import Togglable from './components/Togglable'
 
 import './index.css'
 
@@ -12,11 +16,6 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-
-  // For blog submission
-  const [newBlogTitle, setNewBlogTitle] = useState('')
-  const [newBlogAuthor, setNewBlogAuthor] = useState('')
-  const [newBlogURL, setNewBlogURL] = useState('')
 
   const [notification, setNotification] = useState(null)
   const [error, setError] = useState(false)
@@ -90,28 +89,18 @@ const App = () => {
     </form>
   )
 
-  const submitBlog = (event) => {
-    event.preventDefault()
-    const newBlog = {
-      title: newBlogTitle,
-      author: newBlogAuthor,
-      url: newBlogURL,
-    }
-
+  const submitBlog = (newBlog) => {
     blogService
       .create(newBlog)
       .then(returnedBlog => {
         setBlogs(blogs.concat(returnedBlog))
-        setMessage(`Created new blog ${newBlogTitle} by ${newBlogAuthor}`)
-
-        setNewBlogAuthor('')
-        setNewBlogTitle('')
-        setNewBlogURL('')
         
         setTimeout(() => {
         setErrorMessage(null)
       }, 5000)
-      })
+    })
+
+    blogFormRef.current.toggleVisibility()
   }
 
   if (user === null) {
@@ -133,7 +122,10 @@ const App = () => {
       }}>Log out</button>
       <Notification message = {notification} error = {error} />
       <h2>New Blog</h2>
-      {newBlog()}
+      <Togglable buttonLabel = {"Create new blog"} ref = {blogFormRef}>
+        <BlogForm createBlog = {submitBlog} setMessage = {setMessage}/>
+      </Togglable>
+      
       <p></p>
       <h2>Blogs</h2>
       {blogs.map(blog =>
